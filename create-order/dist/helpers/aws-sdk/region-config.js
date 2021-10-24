@@ -13,7 +13,6 @@ const dynamoRegionConfig = () => {
     AWS_APP_REGION
   } = process.env;
   return {
-    endpoint: `https://s3.${AWS_APP_REGION}.amazonaws.com`,
     apiVersion: '2012-08-10'
   };
 };

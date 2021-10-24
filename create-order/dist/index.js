@@ -25,7 +25,22 @@ require('./dotenv');
 // Types
 
 /* eslint-enable import/first */
-const client = new _awsSdk.default.DynamoDB((0, _regionConfig.default)());
+const {
+  AWS_APP_REGION,
+  NODE_ENV
+} = process.env || {
+  AWS_APP_REGION: 'us-east-1',
+  NODE_ENV: 'dev'
+};
+
+_awsSdk.default.config.update({
+  region: AWS_APP_REGION
+});
+
+const dynamodb = new _awsSdk.default.DynamoDB({
+  apiVersion: '2012-08-10'
+});
+;
 
 const handler = async event => {
   // Event only handles POST event from gateway
@@ -48,7 +63,6 @@ const handler = async event => {
     newOrder,
     varType: typeof order
   });
-  const NODE_ENV = process.env.NODE_EVN || 'dev';
   if (!order && event.body) order = event.body;
 
   try {
@@ -72,13 +86,11 @@ const handler = async event => {
   if (typeof newOrder === 'string') {
     return {
       headers,
-      body: {
+      body: JSON.stringify({
         error: {
           message: 'Error reading order payload'
-        },
-        status: false,
-        statusCode: 500
-      },
+        }
+      }),
       status,
       statusCode
     };
@@ -99,46 +111,59 @@ const handler = async event => {
   (0, _logger.default)({
     params
   });
-  const results = await client.putItem(params, (err, data) => {
-    if (err) {
+
+  try {
+    const results = await new Promise((resolve, reject) => dynamodb.putItem(params, (err, data) => {
+      if (err) {
+        (0, _logger.default)({
+          message: 'Error during dynamo put',
+          err
+        });
+        const errorData = {
+          ok: false,
+          error
+        };
+        reject(errorData);
+      }
+
       (0, _logger.default)({
-        message: 'Error during dynamo put',
-        err
+        message: 'Dynamo put success',
+        data
       });
-      const errorData = {
-        ok: false,
-        error
-      };
-      return errorData;
+      resolve({
+        ok: true,
+        data
+      });
+    })); // console.log('results', results);
+
+    if (!results || !results.ok) {
+      status = false;
+      statusCode = 500;
+      error.message = 'Failed to save order. Please contact support. Error code: FTSO01';
     }
 
-    (0, _logger.default)({
-      message: 'Dynamo put success',
-      data
-    });
     return {
-      ok: true,
-      data
-    };
-  });
-  console.log('results', results);
-
-  if (!results || !results.ok) {
-    status = false;
-    statusCode = 500;
-    error.message = 'Failed to save order. Please contact support. Error code: FTSO01';
-  }
-
-  return {
-    headers,
-    body: JSON.stringify({
-      items: params.Item,
+      headers,
+      body: JSON.stringify({
+        items: params.Item
+      }),
       status,
       statusCode
-    }),
-    status,
-    statusCode
-  };
+    };
+  } catch (err) {
+    (0, _logger.default)({
+      message: 'failed to init putItem',
+      err
+    });
+    return {
+      headers,
+      body: JSON.stringify({
+        items: params.Item
+      }),
+      status: false,
+      statusCode: false
+    };
+  }
 };
 
 var _default = handler;
