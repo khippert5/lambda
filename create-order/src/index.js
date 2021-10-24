@@ -4,7 +4,7 @@ require('./dotenv');
 /* eslint-disable import/first */
 import kmiLog from './helpers/logger';
 
-import { DynamoDBClient } from '/@aws-sdk/client-dynamo';
+import dynamoDBClient from './helpers/aws-sdk/region-config';
 
 import { getOrderPayload } from './helpers/order';
 // Types
@@ -16,7 +16,7 @@ type EventPayload = {
   order: string,
 };
 
-const dynamo = new AWS.Dynamo();
+const dynamo = dynamoDBClient();
 
 const handler = async (event: EventPayload) => {
   // Event only handles POST event from gateway
@@ -67,7 +67,7 @@ const handler = async (event: EventPayload) => {
 
   // const options = getOrderPayload(newOrder);
 
-  // const results = await DynamoDBClient.putItem({
+  // const results = await dynamo.putItem({
   //   TableName: `products_${NODE_ENV}`,
   //   Item: options,
   // }, (err, data) => {

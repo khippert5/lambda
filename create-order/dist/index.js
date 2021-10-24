@@ -7,9 +7,9 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.default = void 0;
 
-var _awsSdk = _interopRequireDefault(require("aws-sdk"));
-
 var _logger = _interopRequireDefault(require("./helpers/logger"));
+
+var _regionConfig = _interopRequireDefault(require("./helpers/aws-sdk/region-config"));
 
 var _order = require("./helpers/order");
 
@@ -21,7 +21,7 @@ require('./dotenv');
 // Types
 
 /* eslint-enable import/first */
-const dynamo = new _awsSdk.default.Dynamo();
+const dynamo = (0, _regionConfig.default)();
 
 const handler = async event => {
   // Event only handles POST event from gateway

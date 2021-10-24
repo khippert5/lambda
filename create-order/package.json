@@ -16,12 +16,12 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.38.0",
     "@babel/polyfill": "^7.12.1",
     "@babel/register": "^7.12.13",
     "@babel/runtime": "^7.12.13",
     "ajv": "^6.12.6",
     "aws-cli": "^0.0.2",
-    "aws-sdk": "^2.1013.0",
     "dotenv": "^8.2.0",
     "uuid": "^8.3.2"
   },

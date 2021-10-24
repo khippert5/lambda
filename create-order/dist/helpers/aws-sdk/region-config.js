@@ -3,31 +3,18 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.s3Region = exports.dynamoRegion = exports.default = void 0;
+exports.dynamoRegion = exports.default = void 0;
+
+var _clientDynamodb = require("@aws-sdk/client-dynamodb");
 
 // 
 require('../../dotenv');
-
-const AWS = require('aws-sdk');
-
-const s3Region = () => {
-  const {
-    AWS_APP_REGION
-  } = process.env;
-  return new AWS.S3({
-    endpoint: 'https://s3.us-east-2.amazonaws.com',
-    apiVersion: '2006-03-01',
-    region: AWS_APP_REGION
-  });
-};
-
-exports.s3Region = s3Region;
 
 const dynamoRegion = () => {
   const {
     AWS_APP_REGION
   } = process.env;
-  return new AWS.DynamoDB({
+  return new _clientDynamodb.DynamoDBClient({
     endpoint: 'https://s3.us-east-2.amazonaws.com',
     apiVersion: '2006-03-01',
     region: AWS_APP_REGION
