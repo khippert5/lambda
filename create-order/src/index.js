@@ -2,8 +2,9 @@
 require('./dotenv');
 
 /* eslint-disable import/first */
-import AWS from 'aws-sdk';
 import kmiLog from './helpers/logger';
+
+import { DynamoDBClient } from '/@aws-sdk/client-dynamo';
 
 import { getOrderPayload } from './helpers/order';
 // Types
@@ -66,7 +67,7 @@ const handler = async (event: EventPayload) => {
 
   // const options = getOrderPayload(newOrder);
 
-  // const results = await dynamo.putItem({
+  // const results = await DynamoDBClient.putItem({
   //   TableName: `products_${NODE_ENV}`,
   //   Item: options,
   // }, (err, data) => {

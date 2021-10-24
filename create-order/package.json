@@ -16,14 +16,21 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@babel/polyfill": "^7.12.1",
+    "@babel/register": "^7.12.13",
+    "@babel/runtime": "^7.12.13",
+    "ajv": "^6.12.6",
     "aws-cli": "^0.0.2",
     "aws-sdk": "^2.1013.0",
+    "dotenv": "^8.2.0",
     "uuid": "^8.3.2"
   },
   "devDependencies": {
     "@babel/cli": "^7.6.4",
     "@babel/core": "^7.6.4",
+    "@babel/plugin-syntax-import-meta": "^7.10.4",
     "@babel/plugin-transform-arrow-functions": "^7.2.0",
+    "@babel/plugin-transform-runtime": "^7.2.0",
     "@babel/preset-env": "^7.6.3",
     "babel-eslint": "^10.0.3",
     "babel-jest": "^24.9.0",
