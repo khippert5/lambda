@@ -2,11 +2,13 @@
 require('./dotenv');
 
 /* eslint-disable import/first */
-import kmiLog from './helpers/logger';
-
-import dynamoDBClient from './helpers/aws-sdk/region-config';
+import AWS from 'aws-sdk';
+import { v4 as uuidv4 } from 'uuid';
 
 import { getOrderPayload } from './helpers/order';
+import kmiLog from './helpers/logger';
+import dynamoRegion from './helpers/aws-sdk/region-config';
+
 // Types
 import type { Order } from './lib/types';
 /* eslint-enable import/first */
@@ -16,7 +18,7 @@ type EventPayload = {
   order: string,
 };
 
-const dynamo = dynamoDBClient();
+const client = new AWS.DynamoDB(dynamoRegion());
 
 const handler = async (event: EventPayload) => {
   // Event only handles POST event from gateway
@@ -27,15 +29,17 @@ const handler = async (event: EventPayload) => {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'POST,GET,OPTIONS',
   };
-  const { order } = event;
-  let newOrder: Order | string = '';
+  let { order } = event;
+  let newOrder: Order | string = {};
+
+  kmiLog({ order, newOrder, varType: typeof order });
 
   const NODE_ENV = process.env.NODE_EVN || 'dev';
 
-  if (!order && event.body) newOrder = event.body;
+  if (!order && event.body) order = event.body;
 
   try {
-    newOrder = JSON.parse(order);
+    newOrder = typeof order === 'string' ? await JSON.parse(order) : order;
   } catch (err) {
     kmiLog({ message: 'Error reading order', newOrder, error: err });
   }
@@ -47,66 +51,66 @@ const handler = async (event: EventPayload) => {
     errorMessage: '',
   };
 
-  kmiLog(order);
+  kmiLog(newOrder);
 
-  // if (typeof newOrder === 'string') {
-  //   return {
-  //     headers,
-  //     body: JSON.stringify({
-  //       error: {
-  //         message: 'Error reading order payload',
-  //       },
-  //       order: newOrder,
-  //       status: false,
-  //       statusCode: 500,
-  //     }),
-  //     status,
-  //     statusCode,
-  //   };
-  // }
+  if (typeof newOrder === 'string') {
+    return {
+      headers,
+      body: {
+        error: {
+          message: 'Error reading order payload',
+        },
+        status: false,
+        statusCode: 500,
+      },
+      status,
+      statusCode,
+    };
+  }
 
-  // const options = getOrderPayload(newOrder);
+  const { billing, email, products, shipping, tax, total } = newOrder;
 
-  // const results = await dynamo.putItem({
-  //   TableName: `products_${NODE_ENV}`,
-  //   Item: options,
-  // }, (err, data) => {
-  //   if (err) {
-  //     const errorData = {
-  //       ok: false,
-  //       error: err,
-  //     };
-  //     return errorData;
-  //   }
+  const params = {
+    TableName: `orders_${NODE_ENV}`,
+    Item: getOrderPayload(newOrder),
+  };
 
-  //   return {
-  //     ok: true,
-  //     data,
-  //   };
-  // });
+  kmiLog({ params });
 
-  // if (!results.ok) {
-  //   status = false;
-  //   statusCode = 500;
-  //   error.message = 'Failed to save order. Please contact support. Error code: FTSO01';
-  // }
+  const results = await client.putItem(params, (err, data) => {
+    if (err) {
+      kmiLog({ message: 'Error during dynamo put', err });
+      const errorData = {
+        ok: false,
+        error,
+      };
+      return errorData;
+    }
+    kmiLog({ message: 'Dynamo put success', data });
+    return {
+      ok: true,
+      data,
+    };
+  });
 
-  // const { orderNumber, timeStamp } = options;
+  console.log('results', results);
 
-  // return {
-  //   headers,
-  //   body: JSON.stringify({
-  //     order: {
-  //       ...newOrder,
-  //       orderNumber,
-  //       timeStamp,
-  //     },
-  //     status,
-  //     statusCode,
-  //   }),
-  //   status,
-  //   statusCode,
-  // };
+  if (!results || !results.ok) {
+    status = false;
+    statusCode = 500;
+    error.message = 'Failed to save order. Please contact support. Error code: FTSO01';
+  }
+
+  return {
+    headers,
+    body: JSON.stringify({
+      items: params.Item,
+      status,
+      statusCode,
+    }),
+    status,
+    statusCode,
+  };
 };
 
 export default handler;

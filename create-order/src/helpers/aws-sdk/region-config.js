@@ -2,11 +2,12 @@
 
 require('../../dotenv');
 
-import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-
-export const dynamoRegion = (): any => {
+export const dynamoRegionConfig = (): any => {
   const { AWS_APP_REGION } = process.env;
-  return new DynamoDBClient({ endpoint: 'https://s3.us-east-2.amazonaws.com', apiVersion: '2006-03-01', region: AWS_APP_REGION });
+  return {
+    endpoint: `https://s3.${AWS_APP_REGION}.amazonaws.com`,
+    apiVersion: '2012-08-10',
+  };
 };
 
-export default dynamoRegion;
+export default dynamoRegionConfig;

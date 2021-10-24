@@ -12,19 +12,17 @@ const getOrderPayload = order => {
   let newOrder = {}; // eslint-disable-next-line array-callback-return
 
   Object.keys(order).map(prop => {
-    const value = typeof order[prop] !== 'string' ? JSON.stringify(order[prop]) : order[prop]; // $FlowFixMe: ToDo - find out why flow doesn't like this
-
+    let value = order[prop];
+    if (order[prop] !== 'string') value = JSON.stringify(order[prop]);
     newOrder[prop] = {
       S: value
     };
   });
-  newOrder = { ...newOrder,
-    orderNumber: {
-      S: (0, _uuid.v4)()
-    },
-    timeStamp: {
-      S: new Date().getTime().toString()
-    }
+  newOrder.orderNumber = {
+    S: (0, _uuid.v4)()
+  };
+  newOrder.timeStamp = {
+    S: new Date().getTime().toString()
   };
   return newOrder;
 };

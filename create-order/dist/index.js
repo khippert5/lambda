@@ -7,11 +7,15 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.default = void 0;
 
+var _awsSdk = _interopRequireDefault(require("aws-sdk"));
+
+var _uuid = require("uuid");
+
+var _order = require("./helpers/order");
+
 var _logger = _interopRequireDefault(require("./helpers/logger"));
 
 var _regionConfig = _interopRequireDefault(require("./helpers/aws-sdk/region-config"));
-
-var _order = require("./helpers/order");
 
 // 
 require('./dotenv');
@@ -21,7 +25,7 @@ require('./dotenv');
 // Types
 
 /* eslint-enable import/first */
-const dynamo = (0, _regionConfig.default)();
+const client = new _awsSdk.default.DynamoDB((0, _regionConfig.default)());
 
 const handler = async event => {
   // Event only handles POST event from gateway
@@ -35,15 +39,20 @@ const handler = async event => {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'POST,GET,OPTIONS'
   };
-  const {
+  let {
     order
   } = event;
-  let newOrder = '';
+  let newOrder = {};
+  (0, _logger.default)({
+    order,
+    newOrder,
+    varType: typeof order
+  });
   const NODE_ENV = process.env.NODE_EVN || 'dev';
-  if (!order && event.body) newOrder = event.body;
+  if (!order && event.body) order = event.body;
 
   try {
-    newOrder = JSON.parse(order);
+    newOrder = typeof order === 'string' ? await JSON.parse(order) : order;
   } catch (err) {
     (0, _logger.default)({
       message: 'Error reading order',
@@ -58,58 +67,78 @@ const handler = async event => {
     message: '',
     errorMessage: ''
   };
-  (0, _logger.default)(order); // if (typeof newOrder === 'string') {
-  //   return {
-  //     headers,
-  //     body: JSON.stringify({
-  //       error: {
-  //         message: 'Error reading order payload',
-  //       },
-  //       order: newOrder,
-  //       status: false,
-  //       statusCode: 500,
-  //     }),
-  //     status,
-  //     statusCode,
-  //   };
-  // }
-  // const options = getOrderPayload(newOrder);
-  // const results = await dynamo.putItem({
-  //   TableName: `products_${NODE_ENV}`,
-  //   Item: options,
-  // }, (err, data) => {
-  //   if (err) {
-  //     const errorData = {
-  //       ok: false,
-  //       error: err,
-  //     };
-  //     return errorData;
-  //   }
-  //   return {
-  //     ok: true,
-  //     data,
-  //   };
-  // });
-  // if (!results.ok) {
-  //   status = false;
-  //   statusCode = 500;
-  //   error.message = 'Failed to save order. Please contact support. Error code: FTSO01';
-  // }
-  // const { orderNumber, timeStamp } = options;
-  // return {
-  //   headers,
-  //   body: JSON.stringify({
-  //     order: {
-  //       ...newOrder,
-  //       orderNumber,
-  //       timeStamp,
-  //     },
-  //     status,
-  //     statusCode,
-  //   }),
-  //   status,
-  //   statusCode,
-  // };
+  (0, _logger.default)(newOrder);
+
+  if (typeof newOrder === 'string') {
+    return {
+      headers,
+      body: {
+        error: {
+          message: 'Error reading order payload'
+        },
+        status: false,
+        statusCode: 500
+      },
+      status,
+      statusCode
+    };
+  }
+
+  const {
+    billing,
+    email,
+    products,
+    shipping,
+    tax,
+    total
+  } = newOrder;
+  const params = {
+    TableName: `orders_${NODE_ENV}`,
+    Item: (0, _order.getOrderPayload)(newOrder)
+  };
+  (0, _logger.default)({
+    params
+  });
+  const results = await client.putItem(params, (err, data) => {
+    if (err) {
+      (0, _logger.default)({
+        message: 'Error during dynamo put',
+        err
+      });
+      const errorData = {
+        ok: false,
+        error
+      };
+      return errorData;
+    }
+
+    (0, _logger.default)({
+      message: 'Dynamo put success',
+      data
+    });
+    return {
+      ok: true,
+      data
+    };
+  });
+  console.log('results', results);
+
+  if (!results || !results.ok) {
+    status = false;
+    statusCode = 500;
+    error.message = 'Failed to save order. Please contact support. Error code: FTSO01';
+  }
+
+  return {
+    headers,
+    body: JSON.stringify({
+      items: params.Item,
+      status,
+      statusCode
+    }),
+    status,
+    statusCode
+  };
 };
 
 var _default = handler;
