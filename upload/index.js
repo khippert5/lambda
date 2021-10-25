@@ -18,10 +18,7 @@ type EventPayload = {
   order: string,
 };
 
-const { AWS_APP_REGION, NODE_ENV } = process.env || { AWS_APP_REGION: 'us-east-1', NODE_ENV: 'dev' };
-
-AWS.config.update({ region: AWS_APP_REGION });
-const dynamodb = new AWS.DynamoDB({apiVersion: '2012-08-10'});;
+const client = new AWS.DynamoDB(dynamoRegion());
 
 const handler = async (event: EventPayload) => {
   // Event only handles POST event from gateway
@@ -36,6 +33,8 @@ const handler = async (event: EventPayload) => {
   let newOrder: Order | string = {};
 
   kmiLog({ order, newOrder, varType: typeof order });
+
+  const NODE_ENV = process.env.NODE_EVN || 'dev';
 
   if (!order && event.body) order = event.body;
 
@@ -57,11 +56,13 @@ const handler = async (event: EventPayload) => {
   if (typeof newOrder === 'string') {
     return {
       headers,
-      body: JSON.stringify({
+      body: {
         error: {
           message: 'Error reading order payload',
         },
-      }),
+        status: false,
+        statusCode: 500,
+      },
       status,
       statusCode,
     };
@@ -76,50 +77,40 @@ const handler = async (event: EventPayload) => {
 
   kmiLog({ params });
 
-  try {
-    const results = await new Promise((resolve, reject) => dynamodb.putItem(params, (err, data) => {
-      if (err) {
-        kmiLog({ message: 'Error during dynamo put', err });
-        const errorData = {
-          ok: false,
-          error,
-        };
-        reject(errorData);
-      }
-      kmiLog({ message: 'Dynamo put success', data });
-      resolve({
-        ok: true,
-        data,
-      });
-    }));
-
-    // console.log('results', results);
-
-    if (!results || !results.ok) {
-      status = false;
-      statusCode = 500;
-      error.message = 'Failed to save order. Please contact support. Error code: FTSO01';
+  const results = await client.putItem(params, (err, data) => {
+    if (err) {
+      kmiLog({ message: 'Error during dynamo put', err });
+      const errorData = {
+        ok: false,
+        error,
+      };
+      return errorData;
     }
-
+    kmiLog({ message: 'Dynamo put success', data });
     return {
-      headers,
-      body: JSON.stringify({
-        items: params.Item,
-      }),
+      ok: true,
+      data,
+    };
+  });
+
+  console.log('results', results);
+
+  if (!results || !results.ok) {
+    status = false;
+    statusCode = 500;
+    error.message = 'Failed to save order. Please contact support. Error code: FTSO01';
+  }
+
+  return {
+    headers,
+    body: JSON.stringify({
+      items: params.Item,
       status,
       statusCode,
-    };
-  } catch (err) {
-    kmiLog({ message: 'failed to init putItem', err });
-    return {
-      headers,
-      body: JSON.stringify({
-        items: params.Item,
-      }),
-      status: false,
-      statusCode: false,
-    };
-  }
+    }),
+    status,
+    statusCode,
+  };
 };
 
 export default handler;
