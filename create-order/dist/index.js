@@ -39,7 +39,7 @@ const client = new _clientDynamodb.DynamoDBClient({
 const handler = async event => {
   // Event only handles POST event from gateway
   (0, _logger.default)({
-    message: 'Forms triggered',
+    message: 'Order triggered',
     event
   });
   const headers = {
@@ -53,17 +53,17 @@ const handler = async event => {
   } = event;
   let newOrder = {};
   (0, _logger.default)({
-    formData,
+    order,
     newOrder,
-    varType: typeof formData
+    varType: typeof order
   });
-  if (!formData && event.body) formData = event.body;
+  if (event.body) newOrder = event.body;
 
   try {
     newOrder = typeof order === 'string' ? await JSON.parse(order) : order;
   } catch (err) {
     (0, _logger.default)({
-      message: 'Error reading form data',
+      message: 'Error reading order data',
       newOrder,
       error: err
     });
@@ -82,7 +82,7 @@ const handler = async event => {
       headers,
       body: JSON.stringify({
         error: {
-          message: 'Error reading form data'
+          message: 'Error reading order data'
         }
       }),
       status,
@@ -91,7 +91,7 @@ const handler = async event => {
   }
 
   const params = {
-    TableName: `forms_${NODE_ENV}`,
+    TableName: `orders_${NODE_ENV}`,
     Item: (0, _order.getPayload)(newOrder)
   };
   (0, _logger.default)({
