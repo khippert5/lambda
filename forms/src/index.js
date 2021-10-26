@@ -5,7 +5,7 @@ require('./dotenv');
 import { DynamoDBClient, BatchExecuteStatementCommand } from "@aws-sdk/client-dynamodb";
 import { v4 as uuidv4 } from 'uuid';
 
-import { getformDataPayload } from './helpers/formData';
+import { getformDataPayload } from './helpers/forms';
 import kmiLog from './helpers/logger';
 import dynamoRegion from './helpers/aws-sdk/region-config';
 
