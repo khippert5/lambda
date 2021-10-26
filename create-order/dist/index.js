@@ -95,7 +95,7 @@ const handler = async event => {
 
   const params = {
     TableName: `orders_${NODE_ENV}`,
-    Item: (0, _order.getPayload)(newOrder)
+    Item: (0, _order.setPayload)(newOrder)
   };
   (0, _logger.default)({
     params

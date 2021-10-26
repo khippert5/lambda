@@ -94,7 +94,7 @@ const handler = async event => {
   } = formData;
   const params = {
     TableName: `forms_${NODE_ENV}`,
-    Item: (0, _forms.setPaylod)(formData)
+    Item: (0, _forms.setPayload)(formData)
   };
   (0, _logger.default)({
     params

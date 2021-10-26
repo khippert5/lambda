@@ -4,7 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 import type { Order } from '../lib/types';
 
-const setOrderId = () => `${moment().format('YYYYmmddsss')}${uuidv4().split('-')[0].toString().toUpperCase()}`;
+const setOrderId = () => `${moment().format('YYYYMMDDkkmmssSS')}${uuidv4().split('-')[0].toString().toUpperCase()}`;
 
 const setTimeStamp = () => new Date().getTime().toString();
 
