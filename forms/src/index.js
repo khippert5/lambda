@@ -53,7 +53,7 @@ const handler = async (event: EventPayload) => {
 
   kmiLog(newFormData);
 
-  if (typeof newFormData === 'string')) {
+  if (typeof newFormData === 'string') {
     return {
       headers,
       body: JSON.stringify({
