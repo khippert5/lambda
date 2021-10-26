@@ -5,17 +5,17 @@ require('./dotenv');
 import { DynamoDBClient, BatchExecuteStatementCommand } from "@aws-sdk/client-dynamodb";
 import { v4 as uuidv4 } from 'uuid';
 
-import { getOrderPayload } from './helpers/order';
+import { getformDataPayload } from './helpers/formData';
 import kmiLog from './helpers/logger';
 import dynamoRegion from './helpers/aws-sdk/region-config';
 
 // Types
-import type { Order } from './lib/types';
+import type { FormData } from './lib/types';
 /* eslint-enable import/first */
 
 type EventPayload = {
   body: string,
-  order: string,
+  formData: string,
 };
 
 const { AWS_APP_REGION, NODE_ENV } = process.env || { AWS_APP_REGION: 'us-east-1', NODE_ENV: 'dev' };
@@ -24,24 +24,24 @@ const client = new DynamoDBClient({ region: AWS_APP_REGION });
 
 const handler = async (event: EventPayload) => {
   // Event only handles POST event from gateway
-  kmiLog({ message: 'Create order triggered', event });
+  kmiLog({ message: 'Forms lambda triggered', event });
   const headers = {
     'X-Requested-With': '*',
     'Access-Control-Allow-Headers': 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,x-requested-with',
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'POST,GET,OPTIONS',
   };
-  let { order } = event;
-  let newOrder: Order | string = {};
+  let { formData } = event;
+  let newFormData: FormData | string = {};
 
-  kmiLog({ order, newOrder, varType: typeof order });
+  kmiLog({ formData, newFormData, varType: typeof formData });
 
-  if (!order && event.body) order = event.body;
+  if (!formData && event.body) formData = event.body;
 
   try {
-    newOrder = typeof order === 'string' ? await JSON.parse(order) : order;
+    newFormData = typeof formData === 'string' ? await JSON.parse(formData) : formData;
   } catch (err) {
-    kmiLog({ message: 'Error reading order', newOrder, error: err });
+    kmiLog({ message: 'Error reading formData', newFormData, error: err });
   }
 
   let status = true;
@@ -51,14 +51,14 @@ const handler = async (event: EventPayload) => {
     errorMessage: '',
   };
 
-  kmiLog(newOrder);
+  kmiLog(newFormData);
 
-  if (typeof newOrder === 'string') {
+  if (typeof newFormData === 'string')) {
     return {
       headers,
       body: JSON.stringify({
         error: {
-          message: 'Error reading order payload',
+          message: 'Error reading formData payload',
         },
       }),
       status,
@@ -66,11 +66,11 @@ const handler = async (event: EventPayload) => {
     };
   }
 
-  const { billing, email, products, shipping, tax, total } = newOrder;
+  const { formname } = newFormData;
 
   const params = {
-    TableName: `orders_${NODE_ENV}`,
-    Item: getOrderPayload(newOrder),
+    TableName: `forms_${NODE_ENV}`,
+    Item: getformDataPayload(newFormData),
   };
 
   kmiLog({ params });
@@ -98,7 +98,7 @@ const handler = async (event: EventPayload) => {
     if (!results || !results.ok) {
       status = false;
       statusCode = 500;
-      error.message = 'Failed to save order. Please contact support. Error code: FTSO01';
+      error.message = 'Failed to save formData. Please contact support. Error code: FTSO01';
     }
 
     return {
