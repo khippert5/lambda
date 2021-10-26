@@ -2,10 +2,11 @@
 require('./dotenv');
 
 /* eslint-disable import/first */
-import { DynamoDBClient, BatchExecuteStatementCommand } from "@aws-sdk/client-dynamodb";
+import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+import { PutCommand } from "@aws-sdk/lib-dynamodb";
 import { v4 as uuidv4 } from 'uuid';
 
-import { getformDataPayload } from './helpers/forms';
+import { setPaylod } from './helpers/forms';
 import kmiLog from './helpers/logger';
 import dynamoRegion from './helpers/aws-sdk/region-config';
 
@@ -20,7 +21,7 @@ type EventPayload = {
 
 const { AWS_APP_REGION, NODE_ENV } = process.env || { AWS_APP_REGION: 'us-east-1', NODE_ENV: 'dev' };
 
-const client = new DynamoDBClient({ region: AWS_APP_REGION });
+const client = new DynamoDBClient({ apiVersion: '2012-08-10', region: AWS_APP_REGION });
 
 const handler = async (event: EventPayload) => {
   // Event only handles POST event from gateway
@@ -69,13 +70,13 @@ const handler = async (event: EventPayload) => {
 
   const params = {
     TableName: `forms_${NODE_ENV}`,
-    Item: getformDataPayload(formData),
+    Item: setPaylod(formData),
   };
 
   kmiLog({ params });
 
   try {
-    const command = new BatchExecuteStatementCommand(params);
+    const command = new PutCommand(params);
     const results = await new Promise((resolve, reject) => client.send(command, (err, data) => {
       if (err) {
         kmiLog({ message: 'Error during dynamo put', err });
