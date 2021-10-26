@@ -9,6 +9,8 @@ exports.default = void 0;
 
 var _clientDynamodb = require("@aws-sdk/client-dynamodb");
 
+var _libDynamodb = require("@aws-sdk/lib-dynamodb");
+
 var _uuid = require("uuid");
 
 var _forms = require("./helpers/forms");
@@ -33,6 +35,7 @@ const {
   NODE_ENV: 'dev'
 };
 const client = new _clientDynamodb.DynamoDBClient({
+  apiVersion: '2012-08-10',
   region: AWS_APP_REGION
 });
 
@@ -91,14 +94,14 @@ const handler = async event => {
   } = formData;
   const params = {
     TableName: `forms_${NODE_ENV}`,
-    Item: (0, _forms.getformDataPayload)(formData)
+    Item: (0, _forms.setPaylod)(formData)
   };
   (0, _logger.default)({
     params
   });
 
   try {
-    const command = new _clientDynamodb.BatchExecuteStatementCommand(params);
+    const command = new _libDynamodb.PutCommand(params);
     const results = await new Promise((resolve, reject) => client.send(command, (err, data) => {
       if (err) {
         (0, _logger.default)({

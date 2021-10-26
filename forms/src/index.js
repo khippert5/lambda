@@ -6,7 +6,7 @@ import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { PutCommand } from "@aws-sdk/lib-dynamodb";
 import { v4 as uuidv4 } from 'uuid';
 
-import { setPaylod } from './helpers/forms';
+import { setPayload } from './helpers/forms';
 import kmiLog from './helpers/logger';
 import dynamoRegion from './helpers/aws-sdk/region-config';
 
@@ -70,7 +70,7 @@ const handler = async (event: EventPayload) => {
 
   const params = {
     TableName: `forms_${NODE_ENV}`,
-    Item: setPaylod(formData),
+    Item: setPayload(formData),
   };
 
   kmiLog({ params });
