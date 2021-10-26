@@ -11,7 +11,7 @@ var _clientDynamodb = require("@aws-sdk/client-dynamodb");
 
 var _uuid = require("uuid");
 
-var _formData = require("./helpers/formData");
+var _forms = require("./helpers/forms");
 
 var _logger = _interopRequireDefault(require("./helpers/logger"));
 
@@ -95,7 +95,7 @@ const handler = async event => {
   } = newFormData;
   const params = {
     TableName: `forms_${NODE_ENV}`,
-    Item: (0, _formData.getformDataPayload)(newFormData)
+    Item: (0, _forms.getformDataPayload)(newFormData)
   };
   (0, _logger.default)({
     params

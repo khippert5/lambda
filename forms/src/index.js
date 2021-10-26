@@ -31,17 +31,16 @@ const handler = async (event: EventPayload) => {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'POST,GET,OPTIONS',
   };
-  let { formData } = event;
-  let newFormData: FormData | string = {};
+  let formData = event;
 
-  kmiLog({ formData, newFormData, varType: typeof formData });
+  kmiLog({ formData, varType: typeof formData });
 
-  if (!formData && event.body) formData = event.body;
+  if (event.body) formData = event.body;
 
   try {
-    newFormData = typeof formData === 'string' ? await JSON.parse(formData) : formData;
+    formData = typeof formData === 'string' ? await JSON.parse(formData) : formData;
   } catch (err) {
-    kmiLog({ message: 'Error reading formData', newFormData, error: err });
+    kmiLog({ message: 'Error reading formData', formData, error: err });
   }
 
   let status = true;
@@ -51,9 +50,9 @@ const handler = async (event: EventPayload) => {
     errorMessage: '',
   };
 
-  kmiLog(newFormData);
+  kmiLog(formData);
 
-  if (typeof newFormData === 'string') {
+  if (!formData || (formData && typeof formData === 'string')) {
     return {
       headers,
       body: JSON.stringify({
@@ -66,11 +65,11 @@ const handler = async (event: EventPayload) => {
     };
   }
 
-  const { formname } = newFormData;
+  const { formname } = formData;
 
   const params = {
     TableName: `forms_${NODE_ENV}`,
-    Item: getformDataPayload(newFormData),
+    Item: getformDataPayload(formData),
   };
 
   kmiLog({ params });
