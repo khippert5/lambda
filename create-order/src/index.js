@@ -2,7 +2,8 @@
 require('./dotenv');
 
 /* eslint-disable import/first */
-import { DynamoDBClient, BatchExecuteStatementCommand } from "@aws-sdk/client-dynamodb";
+import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+import { PutCommand } from "@aws-sdk/lib-dynamodb";
 import { v4 as uuidv4 } from 'uuid';
 
 import { getPayload } from './helpers/order';
@@ -74,7 +75,7 @@ const handler = async (event: EventPayload) => {
   kmiLog({ params });
 
   try {
-    const command = new BatchExecuteStatementCommand(params);
+    const command = new PutCommand(params);
     console.log('command', command);
     const results = await new Promise((resolve, reject) => client.send(command, (err, data) => {
       if (err) {

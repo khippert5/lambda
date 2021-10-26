@@ -9,6 +9,8 @@ exports.default = void 0;
 
 var _clientDynamodb = require("@aws-sdk/client-dynamodb");
 
+var _libDynamodb = require("@aws-sdk/lib-dynamodb");
+
 var _uuid = require("uuid");
 
 var _order = require("./helpers/order");
@@ -100,7 +102,7 @@ const handler = async event => {
   });
 
   try {
-    const command = new _clientDynamodb.BatchExecuteStatementCommand(params);
+    const command = new _libDynamodb.PutCommand(params);
     console.log('command', command);
     const results = await new Promise((resolve, reject) => client.send(command, (err, data) => {
       if (err) {
