@@ -2,7 +2,7 @@
 require('./dotenv');
 
 /* eslint-disable import/first */
-import AWS from 'aws-sdk';
+import { DynamoDBClient, BatchExecuteStatementCommand } from "@aws-sdk/client-dynamodb";
 import { v4 as uuidv4 } from 'uuid';
 
 import { getOrderPayload } from './helpers/order';
@@ -21,7 +21,7 @@ type EventPayload = {
 const { AWS_APP_REGION, NODE_ENV } = process.env || { AWS_APP_REGION: 'us-east-1', NODE_ENV: 'dev' };
 
 AWS.config.update({ region: AWS_APP_REGION });
-const dynamodb = new AWS.DynamoDB({apiVersion: '2012-08-10'});;
+const client = new DynamoDBClient({ region: AWS_APP_REGION });
 
 const handler = async (event: EventPayload) => {
   // Event only handles POST event from gateway
@@ -77,7 +77,8 @@ const handler = async (event: EventPayload) => {
   kmiLog({ params });
 
   try {
-    const results = await new Promise((resolve, reject) => dynamodb.putItem(params, (err, data) => {
+    const command = new BatchExecuteStatementCommand(params);
+    const results = await new Promise((resolve, reject) => client.send(command, (err, data) => {
       if (err) {
         kmiLog({ message: 'Error during dynamo put', err });
         const errorData = {

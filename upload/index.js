@@ -2,8 +2,10 @@
 require('./dotenv');
 
 /* eslint-disable import/first */
-import AWS from 'aws-sdk';
-import { v4 as uuidv4 } from 'uuid';
+import { PutObjectCommand } from "@aws-sdk/client-s3";
+import { s3Client } from "./libs/s3Client.js"; // Helper function that creates Amazon S3 service client module.
+import {path} from "path";
+import {fs} from "fs";
 
 import { getOrderPayload } from './helpers/order';
 import kmiLog from './helpers/logger';
@@ -15,33 +17,35 @@ import type { Order } from './lib/types';
 
 type EventPayload = {
   body: string,
-  order: string,
+  item: string,
 };
 
 const client = new AWS.DynamoDB(dynamoRegion());
 
 const handler = async (event: EventPayload) => {
   // Event only handles POST event from gateway
-  kmiLog({ message: 'Create order triggered', event });
+  kmiLog({ message: 'Upload triggered', event });
   const headers = {
     'X-Requested-With': '*',
     'Access-Control-Allow-Headers': 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,x-requested-with',
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'POST,GET,OPTIONS',
   };
-  let { order } = event;
-  let newOrder: Order | string = {};
+  let { item } = event;
+  let newItem = {};
 
-  kmiLog({ order, newOrder, varType: typeof order });
+
+  kmiLog({ item });
 
   const NODE_ENV = process.env.NODE_EVN || 'dev';
+  const { AWS_BUCKET_NAME } = process.env || { AWS_BUCKET_NAME: 'test' }
 
-  if (!order && event.body) order = event.body;
+  if (!item && event.body) order = event.body;
 
   try {
-    newOrder = typeof order === 'string' ? await JSON.parse(order) : order;
+    newItem = typeof item === 'string' ? await JSON.parse(item) : item;
   } catch (err) {
-    kmiLog({ message: 'Error reading order', newOrder, error: err });
+    kmiLog({ message: 'Error reading upload item', newItem, error: err });
   }
 
   let status = true;
@@ -51,14 +55,14 @@ const handler = async (event: EventPayload) => {
     errorMessage: '',
   };
 
-  kmiLog(newOrder);
+  kmiLog(newItem);
 
-  if (typeof newOrder === 'string') {
+  if (typeof newItem === 'string') {
     return {
       headers,
       body: {
         error: {
-          message: 'Error reading order payload',
+          message: 'Error reading upload payload',
         },
         status: false,
         statusCode: 500,
@@ -68,16 +72,21 @@ const handler = async (event: EventPayload) => {
     };
   }
 
-  const { billing, email, products, shipping, tax, total } = newOrder;
+  const { path, file } = newItem;
+  const fileStream = fs.createReadStream(file);
 
   const params = {
-    TableName: `orders_${NODE_ENV}`,
-    Item: getOrderPayload(newOrder),
+    BUCKET: AWS_BUCKET_NAME,
+    Key: path.basename(file),
+    body: fileStream,
   };
 
   kmiLog({ params });
+  const data = await s3Client.send(new PutObjectCommand(uploadParams));
+  console.log("Success", data);
+  return data; // For unit tests.
 
-  const results = await client.putItem(params, (err, data) => {
+  const results = await s3Client.send(new PutObjectCommand(uploadParams), (err, data) => {
     if (err) {
       kmiLog({ message: 'Error during dynamo put', err });
       const errorData = {

@@ -7,7 +7,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.default = void 0;
 
-var _awsSdk = _interopRequireDefault(require("aws-sdk"));
+var _clientDynamodb = require("@aws-sdk/client-dynamodb");
 
 var _uuid = require("uuid");
 
@@ -32,15 +32,12 @@ const {
   AWS_APP_REGION: 'us-east-1',
   NODE_ENV: 'dev'
 };
-
-_awsSdk.default.config.update({
+AWS.config.update({
   region: AWS_APP_REGION
 });
-
-const dynamodb = new _awsSdk.default.DynamoDB({
-  apiVersion: '2012-08-10'
+const client = new _clientDynamodb.DynamoDBClient({
+  region: AWS_APP_REGION
 });
-;
 
 const handler = async event => {
   // Event only handles POST event from gateway
@@ -113,7 +110,8 @@ const handler = async event => {
   });
 
   try {
-    const results = await new Promise((resolve, reject) => dynamodb.putItem(params, (err, data) => {
+    const command = new _clientDynamodb.BatchExecuteStatementCommand(params);
+    const results = await new Promise((resolve, reject) => client.send(command, (err, data) => {
       if (err) {
         (0, _logger.default)({
           message: 'Error during dynamo put',
