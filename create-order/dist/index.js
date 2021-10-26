@@ -39,7 +39,7 @@ const client = new _clientDynamodb.DynamoDBClient({
 const handler = async event => {
   // Event only handles POST event from gateway
   (0, _logger.default)({
-    message: 'Create order triggered',
+    message: 'Forms triggered',
     event
   });
   const headers = {
@@ -53,17 +53,17 @@ const handler = async event => {
   } = event;
   let newOrder = {};
   (0, _logger.default)({
-    order,
+    formData,
     newOrder,
-    varType: typeof order
+    varType: typeof formData
   });
-  if (!order && event.body) order = event.body;
+  if (!formData && event.body) formData = event.body;
 
   try {
     newOrder = typeof order === 'string' ? await JSON.parse(order) : order;
   } catch (err) {
     (0, _logger.default)({
-      message: 'Error reading order',
+      message: 'Error reading form data',
       newOrder,
       error: err
     });
@@ -82,7 +82,7 @@ const handler = async event => {
       headers,
       body: JSON.stringify({
         error: {
-          message: 'Error reading order payload'
+          message: 'Error reading form data'
         }
       }),
       status,
@@ -90,17 +90,9 @@ const handler = async event => {
     };
   }
 
-  const {
-    billing,
-    email,
-    products,
-    shipping,
-    tax,
-    total
-  } = newOrder;
   const params = {
-    TableName: `orders_${NODE_ENV}`,
-    Item: (0, _order.getOrderPayload)(newOrder)
+    TableName: `forms_${NODE_ENV}`,
+    Item: (0, _order.getPayload)(newOrder)
   };
   (0, _logger.default)({
     params
@@ -134,7 +126,7 @@ const handler = async event => {
     if (!results || !results.ok) {
       status = false;
       statusCode = 500;
-      error.message = 'Failed to save order. Please contact support. Error code: FTSO01';
+      error.message = 'Failed to save order data. Please contact support. Error code: FTSO01';
     }
 
     return {
