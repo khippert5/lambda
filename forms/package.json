@@ -10,7 +10,11 @@
     "build:prod": "npm run flow:compile && rm -rf dist && npx babel compile/src --out-dir dist && npm install --production && cp -R node_modules dist && cd dist && zip -r Lambda.zip * && cd .. && npm i",
     "build:lambda": "npm run flow:compile && npx babel compile/src --out-dir dist && npm install --production && cp -R node_modules dist",
     "flow:compile": "rm -rf ./compile && rm -rf ./dist && flow-remove-types src -d ./compile/src --all --pretty",
-    "rebuild": "rm -rf ./node_modules && npm i"
+    "rebuild": "rm -rf ./node_modules && npm i",
+    "upload:test": "aws s3 cp dist/Lambda.zip  s3://lambda-kmi-systems/forms/test/Lambda.zip && aws lambda update-function-code --function-name test-kmisystems_forms --s3-bucket lambda-kmi-systems --s3-key forms/test/Lambda.zip --region us-east-1",
+    "upload:dev": "aws s3 cp dist/Lambda.zip  s3://lambda-kmi-systems/forms/dev/Lambda.zip",
+    "upload:staging": "aws s3 cp dist/Lambda.zip  s3://lambda-kmi-systems/forms/staging/Lambda.zip",
+    "upload:prod": "aws s3 cp dist/Lambda.zip  s3://lambda-kmi-systems/forms/prod/Lambda.zip"
   },
   "keywords": [],
   "author": "",

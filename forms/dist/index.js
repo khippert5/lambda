@@ -48,23 +48,19 @@ const handler = async event => {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'POST,GET,OPTIONS'
   };
-  let {
-    formData
-  } = event;
-  let newFormData = {};
+  let formData = event;
   (0, _logger.default)({
     formData,
-    newFormData,
     varType: typeof formData
   });
-  if (!formData && event.body) formData = event.body;
+  if (event.body) formData = event.body;
 
   try {
-    newFormData = typeof formData === 'string' ? await JSON.parse(formData) : formData;
+    formData = typeof formData === 'string' ? await JSON.parse(formData) : formData;
   } catch (err) {
     (0, _logger.default)({
       message: 'Error reading formData',
-      newFormData,
+      formData,
       error: err
     });
   }
@@ -75,9 +71,9 @@ const handler = async event => {
     message: '',
     errorMessage: ''
   };
-  (0, _logger.default)(newFormData);
+  (0, _logger.default)(formData);
 
-  if (typeof newFormData === 'string') {
+  if (!formData || formData && typeof formData === 'string') {
     return {
       headers,
       body: JSON.stringify({
@@ -92,10 +88,10 @@ const handler = async event => {
 
   const {
     formname
-  } = newFormData;
+  } = formData;
   const params = {
     TableName: `forms_${NODE_ENV}`,
-    Item: (0, _forms.getformDataPayload)(newFormData)
+    Item: (0, _forms.getformDataPayload)(formData)
   };
   (0, _logger.default)({
     params

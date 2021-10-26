@@ -31,7 +31,7 @@ const handler = async (event: EventPayload) => {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'POST,GET,OPTIONS',
   };
-  let formData = event;
+  let formData = event.formData ? event.formData : event;
 
   kmiLog({ formData, varType: typeof formData });
 

@@ -1,21 +1,20 @@
 // @flow
 import { v4 as uuidv4 } from 'uuid';
 
-import type { Order } from '../lib/types';
+import type { FormData } from '../lib/types';
 
-export const getformDataPayload = (order: Order): { [key: string]: { S: string } } => {
-  let newOrder = {};
+export const getformDataPayload = (data: FormData): { [key: string]: { S: string } } => {
+  let newData = {};
   // eslint-disable-next-line array-callback-return
-  Object.keys(order).map((prop) => {
-    let value = order[prop];
-    if (order[prop] !== 'string') value = JSON.stringify(order[prop]);
-    newOrder[prop] = { S: value };
+  Object.keys(data).map((prop) => {
+    let value = data[prop];
+    if (data[prop] !== 'string') value = JSON.stringify(data[prop]);
+    newData[prop] = { S: value };
   });
 
-  newOrder.orderNumber = { S: uuidv4() };
-  newOrder.timeStamp = { S: new Date().getTime().toString() };
+  newData.timeStamp = { S: new Date().getTime().toString() };
 
-  return newOrder;
+  return newData;
 };
 
 export default getformDataPayload;

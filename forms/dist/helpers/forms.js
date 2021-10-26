@@ -3,12 +3,12 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.getOrderPayload = exports.default = void 0;
+exports.getformDataPayload = exports.default = void 0;
 
 var _uuid = require("uuid");
 
 // 
-const getOrderPayload = order => {
+const getformDataPayload = order => {
   let newOrder = {}; // eslint-disable-next-line array-callback-return
 
   Object.keys(order).map(prop => {
@@ -27,6 +27,6 @@ const getOrderPayload = order => {
   return newOrder;
 };
 
-exports.getOrderPayload = getOrderPayload;
-var _default = getOrderPayload;
+exports.getformDataPayload = getformDataPayload;
+var _default = getformDataPayload;
 exports.default = _default;
