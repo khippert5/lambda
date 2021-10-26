@@ -48,7 +48,7 @@ const handler = async event => {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'POST,GET,OPTIONS'
   };
-  let formData = event;
+  let formData = event.formData ? event.formData : event;
   (0, _logger.default)({
     formData,
     varType: typeof formData

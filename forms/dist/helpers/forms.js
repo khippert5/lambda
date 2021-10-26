@@ -8,23 +8,21 @@ exports.getformDataPayload = exports.default = void 0;
 var _uuid = require("uuid");
 
 // 
-const getformDataPayload = order => {
-  let newOrder = {}; // eslint-disable-next-line array-callback-return
+const getformDataPayload = data => {
+  let newData = {}; // eslint-disable-next-line array-callback-return
 
-  Object.keys(order).map(prop => {
-    let value = order[prop];
-    if (order[prop] !== 'string') value = JSON.stringify(order[prop]);
-    newOrder[prop] = {
+  Object.keys(data).map(prop => {
+    let value = data[prop];
+    if (data[prop] !== 'string') value = JSON.stringify(data[prop]);
+    newData[prop] = {
       S: value
     };
+    console.log('data prop', prop, value, newData[prop]);
   });
-  newOrder.orderNumber = {
-    S: (0, _uuid.v4)()
-  };
-  newOrder.timeStamp = {
+  newData.timeStamp = {
     S: new Date().getTime().toString()
   };
-  return newOrder;
+  return newData;
 };
 
 exports.getformDataPayload = getformDataPayload;
