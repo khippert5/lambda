@@ -13,7 +13,7 @@ var _libDynamodb = require("@aws-sdk/lib-dynamodb");
 
 var _uuid = require("uuid");
 
-var _order = require("./helpers/order");
+var _forms = require("./helpers/forms");
 
 var _logger = _interopRequireDefault(require("./helpers/logger"));
 
@@ -42,7 +42,7 @@ const client = new _clientDynamodb.DynamoDBClient({
 const handler = async event => {
   // Event only handles POST event from gateway
   (0, _logger.default)({
-    message: 'Order triggered',
+    message: 'Forms lambda triggered',
     event
   });
   const headers = {
@@ -51,23 +51,19 @@ const handler = async event => {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'POST,GET,OPTIONS'
   };
-  let {
-    order
-  } = event;
-  let newOrder = {};
+  let formData = event.formData ? event.formData : event;
   (0, _logger.default)({
-    order,
-    newOrder,
-    varType: typeof order
+    formData,
+    varType: typeof formData
   });
-  if (event.body) newOrder = event.body;
+  if (event.body) formData = event.body;
 
   try {
-    newOrder = typeof order === 'string' ? await JSON.parse(order) : order;
+    formData = typeof formData === 'string' ? await JSON.parse(formData) : formData;
   } catch (err) {
     (0, _logger.default)({
-      message: 'Error reading order data',
-      newOrder,
+      message: 'Error reading formData',
+      formData,
       error: err
     });
   }
@@ -78,14 +74,14 @@ const handler = async event => {
     message: '',
     errorMessage: ''
   };
-  (0, _logger.default)(newOrder);
+  (0, _logger.default)(formData);
 
-  if (typeof newOrder === 'string') {
+  if (!formData || formData && typeof formData === 'string') {
     return {
       headers,
       body: JSON.stringify({
         error: {
-          message: 'Error reading order data'
+          message: 'Error reading formData payload'
         }
       }),
       status,
@@ -93,9 +89,12 @@ const handler = async event => {
     };
   }
 
+  const {
+    formname
+  } = formData;
   const params = {
-    TableName: `orders_${NODE_ENV}`,
-    Item: (0, _order.setPayload)(newOrder)
+    TableName: `forms_${NODE_ENV}`,
+    Item: (0, _forms.setPayload)(formData)
   };
   (0, _logger.default)({
     params
@@ -103,7 +102,6 @@ const handler = async event => {
 
   try {
     const command = new _libDynamodb.PutCommand(params);
-    console.log('command', command);
     const results = await new Promise((resolve, reject) => client.send(command, (err, data) => {
       if (err) {
         (0, _logger.default)({
@@ -130,7 +128,7 @@ const handler = async event => {
     if (!results || !results.ok) {
       status = false;
       statusCode = 500;
-      error.message = 'Failed to save order data. Please contact support. Error code: FTSO01';
+      error.message = 'Failed to save formData. Please contact support. Error code: FTSO01';
     }
 
     return {
