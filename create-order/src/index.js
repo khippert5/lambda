@@ -20,7 +20,7 @@ type EventPayload = {
 
 const { AWS_APP_REGION, NODE_ENV } = process.env || { AWS_APP_REGION: 'us-east-1', NODE_ENV: 'dev' };
 
-const client = new DynamoDBClient({ region: AWS_APP_REGION });
+const client = new DynamoDBClient({ apiVersion: '2012-08-10', region: AWS_APP_REGION });
 
 const handler = async (event: EventPayload) => {
   // Event only handles POST event from gateway
@@ -75,6 +75,7 @@ const handler = async (event: EventPayload) => {
 
   try {
     const command = new BatchExecuteStatementCommand(params);
+    console.log('command', command);
     const results = await new Promise((resolve, reject) => client.send(command, (err, data) => {
       if (err) {
         kmiLog({ message: 'Error during dynamo put', err });

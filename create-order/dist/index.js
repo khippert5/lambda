@@ -33,6 +33,7 @@ const {
   NODE_ENV: 'dev'
 };
 const client = new _clientDynamodb.DynamoDBClient({
+  apiVersion: '2012-08-10',
   region: AWS_APP_REGION
 });
 
@@ -100,6 +101,7 @@ const handler = async event => {
 
   try {
     const command = new _clientDynamodb.BatchExecuteStatementCommand(params);
+    console.log('command', command);
     const results = await new Promise((resolve, reject) => client.send(command, (err, data) => {
       if (err) {
         (0, _logger.default)({
