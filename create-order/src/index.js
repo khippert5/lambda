@@ -20,7 +20,6 @@ type EventPayload = {
 
 const { AWS_APP_REGION, NODE_ENV } = process.env || { AWS_APP_REGION: 'us-east-1', NODE_ENV: 'dev' };
 
-AWS.config.update({ region: AWS_APP_REGION });
 const client = new DynamoDBClient({ region: AWS_APP_REGION });
 
 const handler = async (event: EventPayload) => {
