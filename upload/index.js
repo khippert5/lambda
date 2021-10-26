@@ -2,8 +2,7 @@
 require('./dotenv');
 
 /* eslint-disable import/first */
-import { PutObjectCommand } from "@aws-sdk/client-s3";
-import { s3Client } from "./libs/s3Client.js"; // Helper function that creates Amazon S3 service client module.
+import { S3Client. PutObjectCommand } from "@aws-sdk/client-s3";
 import {path} from "path";
 import {fs} from "fs";
 
@@ -20,7 +19,7 @@ type EventPayload = {
   item: string,
 };
 
-const client = new AWS.DynamoDB(dynamoRegion());
+const client = new S3Client(dynamoRegion());
 
 const handler = async (event: EventPayload) => {
   // Event only handles POST event from gateway
