@@ -2,10 +2,10 @@
 require('./dotenv');
 
 /* eslint-disable import/first */
-import AWS from 'aws-sdk';
+import { DynamoDBClient, BatchExecuteStatementCommand } from "@aws-sdk/client-dynamodb";
 import { v4 as uuidv4 } from 'uuid';
 
-import { getOrderPayload } from './helpers/order';
+import { getPayload } from './helpers/order';
 import kmiLog from './helpers/logger';
 import dynamoRegion from './helpers/aws-sdk/region-config';
 
@@ -15,34 +15,33 @@ import type { Order } from './lib/types';
 
 type EventPayload = {
   body: string,
-  order: string,
+  formData: FormData,
 };
 
 const { AWS_APP_REGION, NODE_ENV } = process.env || { AWS_APP_REGION: 'us-east-1', NODE_ENV: 'dev' };
 
-AWS.config.update({ region: AWS_APP_REGION });
-const dynamodb = new AWS.DynamoDB({apiVersion: '2012-08-10'});;
+const client = new DynamoDBClient({ region: AWS_APP_REGION });
 
 const handler = async (event: EventPayload) => {
   // Event only handles POST event from gateway
-  kmiLog({ message: 'Create order triggered', event });
+  kmiLog({ message: 'Forms triggered', event });
   const headers = {
     'X-Requested-With': '*',
     'Access-Control-Allow-Headers': 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,x-requested-with',
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'POST,GET,OPTIONS',
   };
-  let { order } = event;
-  let newOrder: Order | string = {};
+  let { formData } = event;
+  let newFormData: formData | string = {};
 
-  kmiLog({ order, newOrder, varType: typeof order });
+  kmiLog({ formData, newFormData, varType: typeof formData });
 
-  if (!order && event.body) order = event.body;
+  if (!formData && event.body) formData = event.body;
 
   try {
-    newOrder = typeof order === 'string' ? await JSON.parse(order) : order;
+    newFormData = typeof formData === 'string' ? await JSON.parse(formData) : formData;
   } catch (err) {
-    kmiLog({ message: 'Error reading order', newOrder, error: err });
+    kmiLog({ message: 'Error reading form data', newFormData, error: err });
   }
 
   let status = true;
@@ -52,14 +51,16 @@ const handler = async (event: EventPayload) => {
     errorMessage: '',
   };
 
-  kmiLog(newOrder);
+  kmiLog(newFormData);
 
-  if (typeof newOrder === 'string') {
+  const { formname, email } = newFormData;
+
+  if (typeof newFormData === 'string' || !formname || !email) {
     return {
       headers,
       body: JSON.stringify({
         error: {
-          message: 'Error reading order payload',
+          message: 'Error reading form data',
         },
       }),
       status,
@@ -67,17 +68,16 @@ const handler = async (event: EventPayload) => {
     };
   }
 
-  const { billing, email, products, shipping, tax, total } = newOrder;
-
   const params = {
-    TableName: `orders_${NODE_ENV}`,
-    Item: getOrderPayload(newOrder),
+    TableName: `forms_${NODE_ENV}`,
+    Item: getPayload(newFormData),
   };
 
   kmiLog({ params });
 
   try {
-    const results = await new Promise((resolve, reject) => dynamodb.putItem(params, (err, data) => {
+    const command = new BatchExecuteStatementCommand(params);
+    const results = await new Promise((resolve, reject) => client.send(command, (err, data) => {
       if (err) {
         kmiLog({ message: 'Error during dynamo put', err });
         const errorData = {
@@ -98,7 +98,7 @@ const handler = async (event: EventPayload) => {
     if (!results || !results.ok) {
       status = false;
       statusCode = 500;
-      error.message = 'Failed to save order. Please contact support. Error code: FTSO01';
+      error.message = 'Failed to save form data. Please contact support. Error code: FTSO01';
     }
 
     return {

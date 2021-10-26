@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 import type { Order } from '../lib/types';
 
-export const getOrderPayload = (order: Order): { [key: string]: { S: string } } => {
+export const getPayload = (order: Order): { [key: string]: { S: string } } => {
   let newOrder = {};
   // eslint-disable-next-line array-callback-return
   Object.keys(order).map((prop) => {
@@ -18,4 +18,4 @@ export const getOrderPayload = (order: Order): { [key: string]: { S: string } } 
   return newOrder;
 };
 
-export default getOrderPayload;
+export default getPayload;
