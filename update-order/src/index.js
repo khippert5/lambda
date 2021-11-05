@@ -70,7 +70,7 @@ const handler = async (event: EventPayload) => {
     // $FlowFixMe: Allow
     TableName: `orders_${NODE_ENV}`,
     Key: {
-      "orderNumer": orderNumber
+      "orderNumber": orderNumber
     },
     UpdateExpression: "set #paymentStatus = :a, #completed = :b",
     ExpressionAttributeNames: {
