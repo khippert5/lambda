@@ -65,7 +65,7 @@ const handler = async (event: EventPayload) => {
       statusCode,
     };
   }
-  const { orderNumber, status } = order;
+  const { orderNumber, updateStatus } = order;
   const timeStamp = new Date().getTime();
   const params = {
     TableName: `orders_${NODE_ENV}`,
@@ -74,11 +74,11 @@ const handler = async (event: EventPayload) => {
     },
     UpdateExpression: "set status = :a, completed = :b",
     ExpressionAttributeNames: {
-        "status": status,
+        "status": updateStatus,
         "completed": timeStamp
     },
     ExpressionAttributeValues: {
-        ":a": status,
+        ":a": updateStatus,
         ":b": timeStamp
     }
   };
