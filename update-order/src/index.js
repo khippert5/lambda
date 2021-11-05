@@ -64,22 +64,24 @@ const handler = async (event: EventPayload) => {
       statusCode,
     };
   }
-  const { orderNumber, updateStatus } = order;
-  const timeStamp = new Date().getTime().toString();
+  const { orderNumber, updateStatus, timeStamp } = order;
+  const completedStamp = new Date().getTime().toString();
   const params = {
     // $FlowFixMe: Allow
     TableName: `orders_${NODE_ENV}`,
     Key: {
-      "orderNumber": orderNumber
+      "orderNumber": orderNumber,
+      "timeStamp": timeStamp
+
     },
-    UpdateExpression: "set #paymentStatus = :a, #completed = :b",
+    UpdateExpression: "set #status = :a, #completed = :b",
     ExpressionAttributeNames: {
-        "#paymentStatus": { 'S': updateStatus },
-        "#completed": { 'S': timeStamp }
+        "#completed": 'completed',
+        "#status": 'status'
     },
     ExpressionAttributeValues: {
         ":a": updateStatus,
-        ":b": timeStamp
+        ":b": completedStamp,
     }
   };
 
