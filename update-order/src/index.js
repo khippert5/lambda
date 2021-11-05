@@ -72,7 +72,7 @@ const handler = async (event: EventPayload) => {
     Key: {
       "orderNumer": orderNumber
     },
-    UpdateExpression: "set paymentStatus = :a, completed = :b",
+    UpdateExpression: "set #paymentStatus = :a, #completed = :b",
     ExpressionAttributeNames: {
         "paymentStatus": updateStatus,
         "completed": timeStamp
