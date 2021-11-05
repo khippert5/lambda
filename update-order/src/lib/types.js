@@ -2,5 +2,5 @@
 
 export type Order = {
   orderNumber: string,
-  status: string,
+  updateStatus: string,
 };

@@ -5,7 +5,6 @@ require('./dotenv');
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { UpdateCommand } from "@aws-sdk/lib-dynamodb";
 
-import { setPayload } from './helpers/order';
 import kmiLog from './helpers/logger';
 import dynamoRegion from './helpers/aws-sdk/region-config';
 
@@ -32,7 +31,7 @@ const handler = async (event: EventPayload) => {
     'Access-Control-Allow-Methods': 'POST,GET,OPTIONS',
   };
   let { order } = event;
-  let newOrder: Order | string = {};
+  let newOrder = {};
 
   kmiLog({ order, newOrder, varType: typeof order });
 
@@ -66,11 +65,12 @@ const handler = async (event: EventPayload) => {
     };
   }
   const { orderNumber, updateStatus } = order;
-  const timeStamp = new Date().getTime();
+  const timeStamp = new Date().getTime().toString();
   const params = {
+    // $FlowFixMe: Allow
     TableName: `orders_${NODE_ENV}`,
     Key: {
-      "orderNumer": orderNumer
+      "orderNumer": orderNumber
     },
     UpdateExpression: "set status = :a, completed = :b",
     ExpressionAttributeNames: {
@@ -117,7 +117,7 @@ const handler = async (event: EventPayload) => {
       headers,
       body: JSON.stringify({
         update: 'success',
-        orderNubmer,
+        orderNumber,
       }),
       status,
       statusCode,
@@ -128,7 +128,7 @@ const handler = async (event: EventPayload) => {
       headers,
       body: JSON.stringify({
         update: 'failed',
-        orderNubmer,
+        orderNumber,
         error: err,
       }),
       status: false,

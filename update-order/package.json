@@ -22,9 +22,7 @@
     "@babel/register": "^7.12.13",
     "@babel/runtime": "^7.12.13",
     "ajv": "^6.12.6",
-    "dotenv": "^8.2.0",
-    "moment": "^2.29.1",
-    "uuid": "^8.3.2"
+    "dotenv": "^8.2.0"
   },
   "devDependencies": {
     "@babel/cli": "^7.6.4",
