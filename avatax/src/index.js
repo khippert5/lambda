@@ -116,3 +116,5 @@ const handler = async (event: EventPayload) => {
     statusCode: 500,
   };
 }
+
+export default handler;

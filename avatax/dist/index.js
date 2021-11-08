@@ -2,6 +2,11 @@
 
 var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
 
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
 var _avatax = _interopRequireDefault(require("avatax"));
 
 var _logger = _interopRequireDefault(require("./helpers/logger"));
@@ -121,3 +126,6 @@ const handler = async event => {
     statusCode: 500
   };
 };
+
+var _default = handler;
+exports.default = _default;
