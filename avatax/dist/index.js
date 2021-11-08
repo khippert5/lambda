@@ -96,7 +96,7 @@ const handler = async event => {
       region: state,
       country: country || 'us'
     };
-    const response = client.resolveAddress(avaAddress).then(result => {
+    const response = await client.resolveAddress(avaAddress).then(result => {
       // address validation result
       console.log(result);
     });

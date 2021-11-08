@@ -87,7 +87,7 @@ const handler = async (event: EventPayload) => {
       country: country || 'us',
     };
 
-    const response = client.resolveAddress(avaAddress)
+    const response = await client.resolveAddress(avaAddress)
       .then(result => {
         // address validation result
         console.log(result);
