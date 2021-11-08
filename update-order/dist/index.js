@@ -68,7 +68,7 @@ const handler = async event => {
     });
   }
 
-  let status = true;
+  let lambdaStatus = true;
   let statusCode = 200;
   const error = {
     message: '',
@@ -84,15 +84,16 @@ const handler = async event => {
           message: 'Error reading order data'
         }
       }),
-      status,
+      status: lambdaStatus,
       statusCode
     };
   }
 
   const {
     orderNumber,
-    updateStatus,
-    timeStamp
+    status,
+    timeStamp,
+    paymentData
   } = order;
   const completedStamp = new Date().getTime().toString();
   const params = {
@@ -102,14 +103,16 @@ const handler = async event => {
       "orderNumber": orderNumber,
       "timeStamp": timeStamp
     },
-    UpdateExpression: "set #status = :a, #completed = :b",
+    UpdateExpression: "set #status = :a, #completed = :b, #paymentData = :c",
     ExpressionAttributeNames: {
       "#completed": 'completed',
-      "#status": 'status'
+      "#status": 'status',
+      "#paymentData": 'paymentData'
     },
     ExpressionAttributeValues: {
-      ":a": updateStatus,
-      ":b": completedStamp
+      ":a": status,
+      ":b": completedStamp,
+      ":c": paymentData
     }
   };
   (0, _logger.default)({
@@ -143,7 +146,7 @@ const handler = async event => {
     })); // console.log('results', results);
 
     if (!results || !results.ok) {
-      status = false;
+      lambdaStatus = false;
       statusCode = 500;
       error.message = 'Failed to save order data. Please contact support. Error code: FTSO01';
       throw new Error(error);
@@ -155,7 +158,7 @@ const handler = async event => {
         update: 'success',
         orderNumber
       }),
-      status,
+      status: lambdaStatus,
       statusCode
     };
   } catch (err) {

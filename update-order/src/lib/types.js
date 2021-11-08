@@ -2,6 +2,7 @@
 
 export type Order = {
   orderNumber: string,
-  updateStatus: string,
+  status: string,
+  paymentData: any,
   timeStamp: string,
 };

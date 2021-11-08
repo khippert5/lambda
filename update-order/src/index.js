@@ -43,7 +43,7 @@ const handler = async (event: EventPayload) => {
     kmiLog({ message: 'Error reading order data', newOrder, error: err });
   }
 
-  let status = true;
+  let lambdaStatus = true;
   let statusCode = 200;
   const error = {
     message: '',
@@ -60,11 +60,11 @@ const handler = async (event: EventPayload) => {
           message: 'Error reading order data',
         },
       }),
-      status,
+      status: lambdaStatus,
       statusCode,
     };
   }
-  const { orderNumber, updateStatus, timeStamp } = order;
+  const { orderNumber, status, timeStamp, paymentData } = order;
   const completedStamp = new Date().getTime().toString();
   const params = {
     // $FlowFixMe: Allow
@@ -74,14 +74,16 @@ const handler = async (event: EventPayload) => {
       "timeStamp": timeStamp
 
     },
-    UpdateExpression: "set #status = :a, #completed = :b",
+    UpdateExpression: "set #status = :a, #completed = :b, #paymentData = :c",
     ExpressionAttributeNames: {
         "#completed": 'completed',
-        "#status": 'status'
+        "#status": 'status',
+        "#paymentData": 'paymentData'
     },
     ExpressionAttributeValues: {
-        ":a": updateStatus,
+        ":a": status,
         ":b": completedStamp,
+        ":c": paymentData,
     }
   };
 
@@ -109,7 +111,7 @@ const handler = async (event: EventPayload) => {
     // console.log('results', results);
 
     if (!results || !results.ok) {
-      status = false;
+      lambdaStatus = false;
       statusCode = 500;
       error.message = 'Failed to save order data. Please contact support. Error code: FTSO01';
       throw new Error(error);
@@ -121,7 +123,7 @@ const handler = async (event: EventPayload) => {
         update: 'success',
         orderNumber,
       }),
-      status,
+      status: lambdaStatus,
       statusCode,
     };
   } catch (err) {

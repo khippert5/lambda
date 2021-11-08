@@ -33,7 +33,22 @@ const handler = async (event: EventPayload) => {
     'Access-Control-Allow-Methods': 'POST,GET,OPTIONS',
   };
   let { order } = event;
-  let newOrder: Order | string = {};
+  let newOrder: Order | string = {
+    billing: '',
+    email: '',
+    products: [
+      {
+        sku: '',
+        quantity: '',
+        options: {
+          sizes: '',
+        },
+      },
+    ],
+    shipping: '',
+    tax: '',
+    total: '',
+  };
 
   kmiLog({ order, newOrder, varType: typeof order });
 
@@ -68,7 +83,7 @@ const handler = async (event: EventPayload) => {
   }
 
   const params = {
-    TableName: `orders_${NODE_ENV}`,
+    TableName: `orders_${NODE_ENV || 'test'}`,
     Item: setPayload(newOrder),
   };
 
