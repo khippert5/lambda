@@ -1,18 +1,18 @@
 // @flow
 
+export type Address = {
+  address1: string,
+  address2: string,
+  city: string,
+  country: string,
+  state: string,
+  zip: string,
+}
+
 export type Order = {
-  billing: string,
-  email: string,
-  products: [
-    {
-      sku: string,
-      quantity: string,
-      options: {
-        sizes: string,
-      },
-    },
-  ],
-  shipping: string,
-  tax: string,
-  total: string,
-};
+  items: Array<{
+    name: string,
+    quantity: number,
+    price: number,
+  }>,
+}

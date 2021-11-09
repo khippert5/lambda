@@ -3,22 +3,22 @@ import Avatax from 'avatax';
 
 import kmiLog from './helpers/logger';
 
-type Address = {
-  address1: string,
-  address2: string,
-  city: string,
-  country: string,
-  state: string,
-  zip: string,
-}
+// API
+import calcTax from './api/tax-calc';
+
+// Helpers
+import { buildAddress } from './helpers/avatax';
+
+import type { Address, Order } from './lib/types';
 
 type EventPayload = {
   address: Address,
+  order: Order,
 };
 
 const handler = async (event: EventPayload) => {
   kmiLog({ message: 'Avatax triggered', event });
-  let { address } = event;
+  let { address, order } = event;
   const headers = {
     'X-Requested-With': '*',
     'Access-Control-Allow-Headers': 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,x-requested-with',
@@ -79,22 +79,18 @@ const handler = async (event: EventPayload) => {
 
   if (typeof address !== 'string') {
     const client = new Avatax(config).withSecurity(creds);
-    const { city, country, state, zip } = address;
-    const avaAddress = {
-      city,
-      postalCode: zip,
-      region: state,
-      country: country || 'us',
-    };
+    const avaAddress = buildAddress({ address });
 
     const response = await client.resolveAddress(avaAddress)
       .then(result => {
         // address validation result
         console.log(result);
+        kmiLog({ message: 'Avatax response', result: JSON.stringify(result) });
+        return result;
       });
 
     kmiLog({ message: 'Successful address validation', response });
-    return {
+    let returnValue = {
       headers,
       body: JSON.stringify({
         address,
@@ -103,6 +99,11 @@ const handler = async (event: EventPayload) => {
       status: 'success',
       statusCode: 200,
     };
+
+    const responseAddress = response.validatedAddresses[0];
+    const taxCalcResponse = await calcTax({ address: responseAddress, client, order });
+    console.log('taxCalcResponse', taxCalcResponse);
+    kmiLog({ message: 'Tax calculation response', taxCalcResponse })
   }
 
   return {

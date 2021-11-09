@@ -11,14 +11,21 @@ var _avatax = _interopRequireDefault(require("avatax"));
 
 var _logger = _interopRequireDefault(require("./helpers/logger"));
 
+var _taxCalc = _interopRequireDefault(require("./api/tax-calc"));
+
+var _avatax2 = require("./helpers/avatax");
+
 // 
+// API
+// Helpers
 const handler = async event => {
   (0, _logger.default)({
     message: 'Avatax triggered',
     event
   });
   let {
-    address
+    address,
+    order
   } = event;
   const headers = {
     'X-Requested-With': '*',
@@ -84,27 +91,23 @@ const handler = async event => {
 
   if (typeof address !== 'string') {
     const client = new _avatax.default(config).withSecurity(creds);
-    const {
-      city,
-      country,
-      state,
-      zip
-    } = address;
-    const avaAddress = {
-      city,
-      postalCode: zip,
-      region: state,
-      country: country || 'us'
-    };
+    const avaAddress = (0, _avatax2.buildAddress)({
+      address
+    });
     const response = await client.resolveAddress(avaAddress).then(result => {
       // address validation result
       console.log(result);
+      (0, _logger.default)({
+        message: 'Avatax response',
+        result: JSON.stringify(result)
+      });
+      return result;
     });
     (0, _logger.default)({
       message: 'Successful address validation',
       response
     });
-    return {
+    let returnValue = {
       headers,
       body: JSON.stringify({
         address,
@@ -113,6 +116,17 @@ const handler = async event => {
       status: 'success',
       statusCode: 200
     };
+    const responseAddress = response.validatedAddresses[0];
+    const taxCalcResponse = await (0, _taxCalc.default)({
+      address: responseAddress,
+      client,
+      order
+    });
+    console.log('taxCalcResponse', taxCalcResponse);
+    (0, _logger.default)({
+      message: 'Tax calculation response',
+      taxCalcResponse
+    });
   }
 
   return {

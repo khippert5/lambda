@@ -59,6 +59,7 @@ const handler = async (event: EventPayload) => {
         error: {
           message: 'Error reading order data',
         },
+        timeStamp,
       }),
       status: lambdaStatus,
       statusCode,
@@ -122,6 +123,7 @@ const handler = async (event: EventPayload) => {
       body: JSON.stringify({
         update: 'success',
         orderNumber,
+        timeStamp,
       }),
       status: lambdaStatus,
       statusCode,
@@ -132,6 +134,7 @@ const handler = async (event: EventPayload) => {
       headers,
       body: JSON.stringify({
         update: 'failed',
+        timeStamp,
         orderNumber,
         error: err,
       }),
