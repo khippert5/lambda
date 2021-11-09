@@ -107,38 +107,48 @@ const handler = async event => {
       message: 'Successful address validation',
       response
     });
-    let returnValue = {
-      headers,
-      body: JSON.stringify({
-        address,
-        response
-      }),
-      status: 'success',
-      statusCode: 200
-    };
     const responseAddress = response.validatedAddresses[0];
     const taxCalcResponse = await (0, _taxCalc.default)({
       address: responseAddress,
       client,
       order
     });
-    console.log('taxCalcResponse', taxCalcResponse);
     (0, _logger.default)({
       message: 'Tax calculation response',
       taxCalcResponse
     });
-  }
 
-  return {
-    headers,
-    body: JSON.stringify({
-      address,
-      error: 'Address validation failed',
-      errorMessage: 'Malformed address. Inability to parse value.'
-    }),
-    status: 'failed',
-    statusCode: 500
-  };
+    if (!taxCalcResponse.ok) {
+      return {
+        headers,
+        body: JSON.stringify({
+          address: taxCalcResponse.value.addresses[1].ShipTo,
+          payload,
+          error: 'Error calculating tax'
+        }),
+        status: 'failed',
+        statusCode: 500
+      };
+    }
+
+    if (taxCalcResponse.ok) {
+      const {
+        addresses,
+        totalTax,
+        totalTaxCalculated
+      } = taxCalcResponse.value;
+      return {
+        headers,
+        body: JSON.stringify({
+          address: taxCalcResponse.value.addresses[1].ShipTo,
+          totalTax,
+          totalTaxCalculated
+        }),
+        status: 'success',
+        statusCode: 200
+      };
+    }
+  }
 };
 
 var _default = handler;
