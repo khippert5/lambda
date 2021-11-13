@@ -51,6 +51,7 @@ const handler = async (event: EventPayload) => {
   };
 
   kmiLog(newOrder);
+  const { orderNumber, status, timeStamp, paymentData } = order;
 
   if (typeof newOrder === 'string') {
     return {
@@ -65,7 +66,7 @@ const handler = async (event: EventPayload) => {
       statusCode,
     };
   }
-  const { orderNumber, status, timeStamp, paymentData } = order;
+
   const completedStamp = new Date().getTime().toString();
   const params = {
     // $FlowFixMe: Allow
