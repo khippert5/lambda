@@ -2,15 +2,14 @@
 require('./dotenv');
 
 /* eslint-disable import/first */
-import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
-
-const path = require('path');
-
-const fs = require('fs');
-
-import { getOrderPayload } from './helpers/order';
 import kmiLog from './helpers/logger';
-import dynamoRegion from './helpers/aws-sdk/region-config';
+import { getFileData } from './helpers/getFileData';
+
+import AWS from 'aws-sdk';
+
+const { AWS_APP_REGION } = process.env || { AWS_APP_REGION: 'us-east-1' };
+
+const S3 = new AWS.S3({ endpoint: 'https://s3.us-east-1.amazonaws.com', apiVersion: '2006-03-01', region: AWS_APP_REGION });
 /* eslint-enable import/first */
 
 type EventPayload = {
@@ -18,16 +17,14 @@ type EventPayload = {
   object: string,
 };
 
-const s3Client = new S3Client(dynamoRegion());
-
 const handler = async (event: EventPayload) => {
   // Event only handles POST event from gateway
-  kmiLog({ message: 'Upload triggered', event });
+  kmiLog({ message: 'Get inventory triggered', event });
   const headers = {
     'X-Requested-With': '*',
     'Access-Control-Allow-Headers': 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,x-requested-with',
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'POST,GET,OPTIONS',
+    'Access-Control-Allow-Methods': 'GET,OPTIONS',
   };
   let { object } = event;
   let newItem = {};
@@ -36,14 +33,14 @@ const handler = async (event: EventPayload) => {
   kmiLog({ object });
 
   const NODE_ENV = process.env.NODE_EVN || 'dev';
-  const { AWS_BUCKET_NAME } = process.env || { AWS_BUCKET_NAME: 'test' }
+  const { AWS_S3_BUCKET_NAME } = process.env || { AWS_S3_BUCKET_NAME: 'test' }
 
   if (!object && event.body) object = event.body;
 
   try {
     newItem = typeof object === 'string' ? await JSON.parse(object) : object;
   } catch (err) {
-    kmiLog({ message: 'Error reading upload item', newItem, error: err });
+    kmiLog({ message: 'Error reading get inventory values', newItem, error: err });
   }
 
   let status = true;
@@ -60,7 +57,7 @@ const handler = async (event: EventPayload) => {
       headers,
       body: {
         error: {
-          message: 'Error reading upload payload',
+          message: 'Error reading inventory items',
         },
         status: false,
         statusCode: 500,
@@ -70,51 +67,46 @@ const handler = async (event: EventPayload) => {
     };
   }
 
-  const { path, file } = newItem;
-  const fileStream = fs.createReadStream(file);
+  const { folder, file } = newItem;
 
   const params = {
-    BUCKET: AWS_BUCKET_NAME,
-    Key: path.basename(file),
-    body: fileStream,
+    Bucket: AWS_S3_BUCKET_NAME,
+    Key: `${folder}/${file}`,
   };
 
   kmiLog({ params });
 
-  const results = await s3Client.send(new GetObjectCommand(params), (err, data) => {
-    if (err) {
-      kmiLog({ message: 'Error during inventory get', err });
-      const errorData = {
-        ok: false,
-        error,
-      };
-      return errorData;
-    }
-    kmiLog({ message: 'Inventory get success', data });
-    return {
-      ok: true,
-      data,
-    };
+  return new Promise((resolve, reject) => {
+    kmiLog({ message: 'getParam', params });
+
+    return S3.getObject(params, (err, data) => {
+      if (err) {
+        kmiLog({ message: 'Error getting data', error: JSON.stringify(err) });
+        const newError = {
+          ok: false,
+          error: err,
+        };
+        reject({
+          headers,
+          body: JSON.stringify({
+            error: newError,
+          }),
+          status: false,
+          statusCode: 500,
+        });
+      }
+      const { Body } = data;
+      kmiLog({ message: 'Data received', data: (Body.toString('utf-8')) });
+      resolve({
+        headers,
+        body: JSON.stringify({
+          data: (Body.toString('utf-8')),
+        }),
+        status,
+        statusCode,
+      });
+    });
   });
-
-  console.log('results', results);
-
-  if (!results || !results.ok) {
-    status = false;
-    statusCode = 500;
-    error.message = 'Failed to get inventory';
-  }
-
-  return {
-    headers,
-    body: JSON.stringify({
-      items: params,
-      status,
-      statusCode,
-    }),
-    status,
-    statusCode,
-  };
 };
 
 export default handler;
