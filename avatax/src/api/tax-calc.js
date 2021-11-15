@@ -7,7 +7,15 @@ import kmiLog from '../helpers/logger';
 
 import type { Address, Order } from '../lib/types';
 
-const calculateTax = async ({ address, client, order }: { address: Address, client: any, order: Order}) => {
+type CalcProps = { address: Address, client: any, order: Order}
+type CalcResults = {
+  ok: boolean,
+  value: any,
+} | {
+  ok: boolean,
+  error: string,
+}
+const calculateTax = async ({ address, client, order }: CalcProps): Promise<CalcResults> => {
   const taxDocument = {
     type: 'SalesOrder',
     companyCode: 'urbanchicus',
