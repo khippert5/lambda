@@ -123,7 +123,6 @@ const handler = async event => {
         headers,
         body: JSON.stringify({
           address: taxCalcResponse.value.addresses[1].ShipTo,
-          payload,
           error: 'Error calculating tax'
         }),
         status: 'failed',

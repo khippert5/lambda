@@ -54,7 +54,20 @@ const handler = async event => {
   let {
     order
   } = event;
-  let newOrder = {};
+  let newOrder = {
+    billing: '',
+    email: '',
+    products: [{
+      sku: '',
+      quantity: '',
+      options: {
+        sizes: ''
+      }
+    }],
+    shipping: '',
+    tax: '',
+    total: ''
+  };
   (0, _logger.default)({
     order,
     newOrder,
@@ -94,7 +107,7 @@ const handler = async event => {
   }
 
   const params = {
-    TableName: `orders_${NODE_ENV}`,
+    TableName: `orders_${NODE_ENV || 'test'}`,
     Item: (0, _order.setPayload)(newOrder)
   };
   (0, _logger.default)({

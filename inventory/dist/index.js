@@ -49,7 +49,7 @@ const handler = async event => {
   (0, _logger.default)({
     object
   });
-  const NODE_ENV = process.env.NODE_EVN || 'dev';
+  const NODE_ENV = process.env.NODE_ENV || 'dev';
   const {
     AWS_S3_BUCKET_NAME
   } = process.env || {
@@ -96,7 +96,7 @@ const handler = async event => {
   } = newItem;
   const params = {
     Bucket: AWS_S3_BUCKET_NAME,
-    Key: `${folder}/${file}`
+    Key: `${folder}/${NODE_ENV}/${file}`
   };
   (0, _logger.default)({
     params
@@ -110,6 +110,7 @@ const handler = async event => {
       if (err) {
         (0, _logger.default)({
           message: 'Error getting data',
+          params,
           error: JSON.stringify(err)
         });
         const newError = {

@@ -32,7 +32,7 @@ const handler = async (event: EventPayload) => {
 
   kmiLog({ object });
 
-  const NODE_ENV = process.env.NODE_EVN || 'dev';
+  const NODE_ENV = process.env.NODE_ENV || 'dev';
   const { AWS_S3_BUCKET_NAME } = process.env || { AWS_S3_BUCKET_NAME: 'test' }
 
   if (!object && event.body) object = event.body;
@@ -71,7 +71,7 @@ const handler = async (event: EventPayload) => {
 
   const params = {
     Bucket: AWS_S3_BUCKET_NAME,
-    Key: `${folder}/${file}`,
+    Key: `${folder}/${NODE_ENV}/${file}`,
   };
 
   kmiLog({ params });
@@ -81,7 +81,7 @@ const handler = async (event: EventPayload) => {
 
     return S3.getObject(params, (err, data) => {
       if (err) {
-        kmiLog({ message: 'Error getting data', error: JSON.stringify(err) });
+        kmiLog({ message: 'Error getting data', params, error: JSON.stringify(err) });
         const newError = {
           ok: false,
           error: err,
