@@ -5,7 +5,7 @@ import type { FormData } from '../lib/types';
 
 const setTimeStamp = () => new Date().getTime().toString();
 
-export const setPayload = (data: FormData): { [key: string]: { S: string } } => {
+export const setPayload = (data: FormData): { [key: string]: string } => {
   let newData = {};
   // eslint-disable-next-line array-callback-return
   Object.keys(data).map((prop) => {

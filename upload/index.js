@@ -2,16 +2,15 @@
 require('./dotenv');
 
 /* eslint-disable import/first */
-import { S3Client. PutObjectCommand } from "@aws-sdk/client-s3";
-import {path} from "path";
-import {fs} from "fs";
+import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+
+const path = require('path');
+
+const fs = require('fs');
 
 import { getOrderPayload } from './helpers/order';
 import kmiLog from './helpers/logger';
 import dynamoRegion from './helpers/aws-sdk/region-config';
-
-// Types
-import type { Order } from './lib/types';
 /* eslint-enable import/first */
 
 type EventPayload = {
@@ -19,7 +18,7 @@ type EventPayload = {
   item: string,
 };
 
-const client = new S3Client(dynamoRegion());
+const s3Client = new S3Client(dynamoRegion());
 
 const handler = async (event: EventPayload) => {
   // Event only handles POST event from gateway
@@ -39,7 +38,7 @@ const handler = async (event: EventPayload) => {
   const NODE_ENV = process.env.NODE_EVN || 'dev';
   const { AWS_BUCKET_NAME } = process.env || { AWS_BUCKET_NAME: 'test' }
 
-  if (!item && event.body) order = event.body;
+  if (!item && event.body) item = event.body;
 
   try {
     newItem = typeof item === 'string' ? await JSON.parse(item) : item;
@@ -81,20 +80,17 @@ const handler = async (event: EventPayload) => {
   };
 
   kmiLog({ params });
-  const data = await s3Client.send(new PutObjectCommand(uploadParams));
-  console.log("Success", data);
-  return data; // For unit tests.
 
-  const results = await s3Client.send(new PutObjectCommand(uploadParams), (err, data) => {
+  const results = await s3Client.send(new PutObjectCommand(params), (err, data) => {
     if (err) {
-      kmiLog({ message: 'Error during dynamo put', err });
+      kmiLog({ message: 'Error during S# upload put', err });
       const errorData = {
         ok: false,
         error,
       };
       return errorData;
     }
-    kmiLog({ message: 'Dynamo put success', data });
+    kmiLog({ message: 'S3 upload success', data });
     return {
       ok: true,
       data,
@@ -112,7 +108,7 @@ const handler = async (event: EventPayload) => {
   return {
     headers,
     body: JSON.stringify({
-      items: params.Item,
+      items: params,
       status,
       statusCode,
     }),
