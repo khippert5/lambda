@@ -8,7 +8,7 @@ const setOrderId = () => `${moment().format('YYYYMMDDkkmmssSS')}${uuidv4().split
 
 const setTimeStamp = () => new Date().getTime().toString();
 
-export const setPayload = (order: Order): { [key: string]: { S: string } } => {
+export const setPayload = (order: Order): { [key: string]: string } => {
   let newOrder = {};
   // eslint-disable-next-line array-callback-return
   Object.keys(order).map((prop) => {

@@ -11,10 +11,6 @@ var _clientDynamodb = require("@aws-sdk/client-dynamodb");
 
 var _libDynamodb = require("@aws-sdk/lib-dynamodb");
 
-var _uuid = require("uuid");
-
-var _order = require("./helpers/order");
-
 var _logger = _interopRequireDefault(require("./helpers/logger"));
 
 var _regionConfig = _interopRequireDefault(require("./helpers/aws-sdk/region-config"));
@@ -42,7 +38,7 @@ const client = new _clientDynamodb.DynamoDBClient({
 const handler = async event => {
   // Event only handles POST event from gateway
   (0, _logger.default)({
-    message: 'Order triggered',
+    message: 'Update Order triggered',
     event
   });
   const headers = {
@@ -54,20 +50,7 @@ const handler = async event => {
   let {
     order
   } = event;
-  let newOrder = {
-    billing: '',
-    email: '',
-    products: [{
-      sku: '',
-      quantity: '',
-      options: {
-        sizes: ''
-      }
-    }],
-    shipping: '',
-    tax: '',
-    total: ''
-  };
+  let newOrder = {};
   (0, _logger.default)({
     order,
     newOrder,
@@ -85,7 +68,7 @@ const handler = async event => {
     });
   }
 
-  let status = true;
+  let lambdaStatus = true;
   let statusCode = 200;
   const error = {
     message: '',
@@ -101,26 +84,48 @@ const handler = async event => {
           message: 'Error reading order data'
         }
       }),
-      status,
+      status: lambdaStatus,
       statusCode
     };
   }
 
+  const {
+    orderNumber,
+    status,
+    timeStamp,
+    paymentData
+  } = order;
+  const completedStamp = new Date().getTime().toString();
   const params = {
-    TableName: `orders_${NODE_ENV || 'test'}`,
-    Item: (0, _order.setPayload)(newOrder)
+    // $FlowFixMe: Allow
+    TableName: `orders_${NODE_ENV}`,
+    Key: {
+      "orderNumber": orderNumber,
+      "timeStamp": timeStamp
+    },
+    UpdateExpression: "set #status = :a, #completed = :b, #paymentData = :c",
+    ExpressionAttributeNames: {
+      "#completed": 'completed',
+      "#status": 'status',
+      "#paymentData": 'paymentData'
+    },
+    ExpressionAttributeValues: {
+      ":a": status,
+      ":b": completedStamp,
+      ":c": paymentData
+    }
   };
   (0, _logger.default)({
     params
   });
 
   try {
-    const command = new _libDynamodb.PutCommand(params);
+    const command = new _libDynamodb.UpdateCommand(params);
     console.log('command', command);
     const results = await new Promise((resolve, reject) => client.send(command, (err, data) => {
       if (err) {
         (0, _logger.default)({
-          message: 'Error during dynamo put',
+          message: 'Error during dynamo update',
           err
         });
         const errorData = {
@@ -131,7 +136,7 @@ const handler = async event => {
       }
 
       (0, _logger.default)({
-        message: 'Dynamo put success',
+        message: 'Dynamo update success',
         data
       });
       resolve({
@@ -141,28 +146,32 @@ const handler = async event => {
     })); // console.log('results', results);
 
     if (!results || !results.ok) {
-      status = false;
+      lambdaStatus = false;
       statusCode = 500;
       error.message = 'Failed to save order data. Please contact support. Error code: FTSO01';
+      throw new Error(error);
     }
 
     return {
       headers,
       body: JSON.stringify({
-        items: params.Item
+        update: 'success',
+        orderNumber
       }),
-      status,
+      status: lambdaStatus,
       statusCode
     };
   } catch (err) {
     (0, _logger.default)({
-      message: 'failed to init putItem',
+      message: 'failed to init update',
       err
     });
     return {
       headers,
       body: JSON.stringify({
-        items: params.Item
+        update: 'failed',
+        orderNumber,
+        error: err
       }),
       status: false,
       statusCode: false

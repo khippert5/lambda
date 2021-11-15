@@ -3,10 +3,8 @@ require('./dotenv');
 
 /* eslint-disable import/first */
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { PutCommand } from "@aws-sdk/lib-dynamodb";
-import { v4 as uuidv4 } from 'uuid';
+import { UpdateCommand } from "@aws-sdk/lib-dynamodb";
 
-import { setPayload } from './helpers/order';
 import kmiLog from './helpers/logger';
 import dynamoRegion from './helpers/aws-sdk/region-config';
 
@@ -25,7 +23,7 @@ const client = new DynamoDBClient({ apiVersion: '2012-08-10', region: AWS_APP_RE
 
 const handler = async (event: EventPayload) => {
   // Event only handles POST event from gateway
-  kmiLog({ message: 'Order triggered', event });
+  kmiLog({ message: 'Update Order triggered', event });
   const headers = {
     'X-Requested-With': '*',
     'Access-Control-Allow-Headers': 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,x-requested-with',
@@ -33,22 +31,7 @@ const handler = async (event: EventPayload) => {
     'Access-Control-Allow-Methods': 'POST,GET,OPTIONS',
   };
   let { order } = event;
-  let newOrder: Order | string = {
-    billing: '',
-    email: '',
-    products: [
-      {
-        sku: '',
-        quantity: '',
-        options: {
-          sizes: '',
-        },
-      },
-    ],
-    shipping: '',
-    tax: '',
-    total: '',
-  };
+  let newOrder = {};
 
   kmiLog({ order, newOrder, varType: typeof order });
 
@@ -60,7 +43,7 @@ const handler = async (event: EventPayload) => {
     kmiLog({ message: 'Error reading order data', newOrder, error: err });
   }
 
-  let status = true;
+  let lambdaStatus = true;
   let statusCode = 200;
   const error = {
     message: '',
@@ -68,6 +51,7 @@ const handler = async (event: EventPayload) => {
   };
 
   kmiLog(newOrder);
+  const { orderNumber, status, timeStamp, paymentData } = order;
 
   if (typeof newOrder === 'string') {
     return {
@@ -76,32 +60,50 @@ const handler = async (event: EventPayload) => {
         error: {
           message: 'Error reading order data',
         },
+        timeStamp,
       }),
-      status,
+      status: lambdaStatus,
       statusCode,
     };
   }
 
+  const completedStamp = new Date().getTime().toString();
   const params = {
-    TableName: `orders_${NODE_ENV || 'test'}`,
-    Item: setPayload(newOrder),
+    // $FlowFixMe: Allow
+    TableName: `orders_${NODE_ENV}`,
+    Key: {
+      "orderNumber": orderNumber,
+      "timeStamp": timeStamp
+
+    },
+    UpdateExpression: "set #status = :a, #completed = :b, #paymentData = :c",
+    ExpressionAttributeNames: {
+        "#completed": 'completed',
+        "#status": 'status',
+        "#paymentData": 'paymentData'
+    },
+    ExpressionAttributeValues: {
+        ":a": status,
+        ":b": completedStamp,
+        ":c": paymentData,
+    }
   };
 
   kmiLog({ params });
 
   try {
-    const command = new PutCommand(params);
+    const command = new UpdateCommand(params);
     console.log('command', command);
     const results = await new Promise((resolve, reject) => client.send(command, (err, data) => {
       if (err) {
-        kmiLog({ message: 'Error during dynamo put', err });
+        kmiLog({ message: 'Error during dynamo update', err });
         const errorData = {
           ok: false,
           error,
         };
         reject(errorData);
       }
-      kmiLog({ message: 'Dynamo put success', data });
+      kmiLog({ message: 'Dynamo update success', data });
       resolve({
         ok: true,
         data,
@@ -111,25 +113,31 @@ const handler = async (event: EventPayload) => {
     // console.log('results', results);
 
     if (!results || !results.ok) {
-      status = false;
+      lambdaStatus = false;
       statusCode = 500;
       error.message = 'Failed to save order data. Please contact support. Error code: FTSO01';
+      throw new Error(error);
     }
 
     return {
       headers,
       body: JSON.stringify({
-        items: params.Item,
+        update: 'success',
+        orderNumber,
+        timeStamp,
       }),
-      status,
+      status: lambdaStatus,
       statusCode,
     };
   } catch (err) {
-    kmiLog({ message: 'failed to init putItem', err });
+    kmiLog({ message: 'failed to init update', err });
     return {
       headers,
       body: JSON.stringify({
-        items: params.Item,
+        update: 'failed',
+        timeStamp,
+        orderNumber,
+        error: err,
       }),
       status: false,
       statusCode: false,

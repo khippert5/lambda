@@ -17,6 +17,7 @@ import type { FormData } from './lib/types';
 type EventPayload = {
   body: string,
   formData: string,
+  formname: string,
 };
 
 const { AWS_APP_REGION, NODE_ENV } = process.env || { AWS_APP_REGION: 'us-east-1', NODE_ENV: 'dev' };
@@ -66,10 +67,10 @@ const handler = async (event: EventPayload) => {
     };
   }
 
-  const { formname } = formData;
+  const { formname }: FormData = formData;
 
   const params = {
-    TableName: `forms_${NODE_ENV}`,
+    TableName: `forms_${NODE_ENV || 'test'}`,
     Item: setPayload(formData),
   };
 

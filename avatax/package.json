@@ -1,5 +1,5 @@
 {
-  "name": "uploadassets",
+  "name": "create-order",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -16,15 +16,14 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.40.0",
     "@babel/polyfill": "^7.12.1",
     "@babel/register": "^7.12.13",
     "@babel/runtime": "^7.12.13",
-    "ajv": "^6.12.6",
+    "ajv": "^8.6.3",
+    "avatax": "^21.10.0",
     "dotenv": "^8.2.0",
-    "fs": "^0.0.1-security",
     "moment": "^2.29.1",
-    "path": "^0.12.7"
+    "uuid": "^8.3.2"
   },
   "devDependencies": {
     "@babel/cli": "^7.6.4",
@@ -33,7 +32,7 @@
     "@babel/plugin-transform-arrow-functions": "^7.2.0",
     "@babel/plugin-transform-runtime": "^7.2.0",
     "@babel/preset-env": "^7.6.3",
-    "babel-eslint": "^10.0.3",
+    "babel-eslint": "^10.1.0",
     "babel-jest": "^24.9.0",
     "eslint": "^6.5.1",
     "eslint-config-airbnb-base": "^14.0.0",
