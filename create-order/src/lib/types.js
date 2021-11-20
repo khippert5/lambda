@@ -15,4 +15,5 @@ export type Order = {
   shipping: string,
   tax: string,
   total: string,
+  user: { [key: string]: string },
 };
