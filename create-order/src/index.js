@@ -48,6 +48,7 @@ const handler = async (event: EventPayload) => {
     shipping: '',
     tax: '',
     total: '',
+    user: {},
   };
 
   kmiLog({ order, newOrder, varType: typeof order });
