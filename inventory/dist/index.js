@@ -96,7 +96,7 @@ const handler = async event => {
   } = newItem;
   const params = {
     Bucket: AWS_S3_BUCKET_NAME,
-    Key: `${folder}/${NODE_ENV}/${file}`
+    Key: `${NODE_ENV}/${file}`
   };
   (0, _logger.default)({
     params
